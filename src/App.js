@@ -28,10 +28,10 @@ function login(data) {
       window.location.reload();
     })
     .catch((err) => {
-      if(err.response.status === 401) {
+      if (err.response.status === 401) {
         alert('Password or email is wrong!');
       }
-    })
+    });
 }
 
 function App() {
@@ -61,6 +61,13 @@ function App() {
           console.log(data);
           setPosts(data);
           setWasUpdate(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          if (err.response.status === 404) {
+            alert('No posts found! Please, login and create one!');
+            setWasUpdate(false);
+          }
         });
     }
   }, [wasUpdate]);
@@ -216,29 +223,33 @@ function App() {
           flex="wrap"
           justifyContent="center"
         >
-          {posts.map((post) => (
-            <List.Item key={post.id} m="3" style={{ width: '20rem' }}>
-              <Card w="100">
-                <Card.Body
-                  display="flex"
-                  flex="column"
-                  alignItems="center"
-                  w="100"
-                >
-                  <Card.Title>{post.title}</Card.Title>
-                  <Card.Text>{post.description}</Card.Text>
-                  <Button
-                    dark
-                    type="input"
-                    onClick={() => openFullPostHandler(post)}
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <List.Item key={post.id} m="3" style={{ width: '20rem' }}>
+                <Card w="100">
+                  <Card.Body
+                    display="flex"
+                    flex="column"
+                    alignItems="center"
+                    w="100"
                   >
-                    View Full
-                  </Button>
-                </Card.Body>
-                <Card.Footer>Written by: {post.author}</Card.Footer>
-              </Card>
-            </List.Item>
-          ))}
+                    <Card.Title>{post.title}</Card.Title>
+                    <Card.Text>{post.description}</Card.Text>
+                    <Button
+                      dark
+                      type="input"
+                      onClick={() => openFullPostHandler(post)}
+                    >
+                      View Full
+                    </Button>
+                  </Card.Body>
+                  <Card.Footer>Written by: {post.author}</Card.Footer>
+                </Card>
+              </List.Item>
+            ))
+          ) : (
+            <h1>No Posts Found!</h1>
+          )}
         </List>
       ) : (
         <CreatePost
