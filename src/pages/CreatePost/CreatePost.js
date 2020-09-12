@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { Form, Button, BDiv, Blockquote, List } from 'bootstrap-4-react';
+import { Form, Button, BDiv, BA, Blockquote, List } from 'bootstrap-4-react';
 import axios from 'axios';
 
 export default (props) => {
@@ -28,7 +28,7 @@ export default (props) => {
           setComments(result.data);
         })
         .catch((err) => {
-          console.log('No comments found!');
+          console.dir(err);
         });
     }
   }, [props.chosenPost.id]);
@@ -53,19 +53,13 @@ export default (props) => {
   const submitHandler = (event) => {
     event.preventDefault();
     const token = localStorage.getItem('token');
-    const username = localStorage.getItem('username');
-    const userId = localStorage.getItem('userId');
     const data = {
       title,
       body,
-      description,
-      author: username,
-      user_id: userId,
+      description
     };
 
     if (isUpdate) {
-      data.id = props.chosenPost.id;
-
       axios
         .put(
           `http://localhost/php_test_rest/api/posts/update.php?token=${token}`,
@@ -91,6 +85,7 @@ export default (props) => {
         .then(({ data }) => {
           alert(data.message);
           resetFields(data);
+          props.postUpdated();
           props.switchPage('home');
         })
         .catch((err) => alert(err));
@@ -100,14 +95,10 @@ export default (props) => {
   const submitCommentHandler = (event) => {
     event.preventDefault();
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    const username = localStorage.getItem('username');
 
     const data = {
       body: commentBody,
-      post_id: props.chosenPost.id,
-      user_id: userId,
-      username,
+      post_id: props.chosenPost.id
     };
     axios
       .post(
@@ -115,9 +106,12 @@ export default (props) => {
         data
       )
       .then((result) => {
-        alert(result.data.message);
+        const { username, message, user_id } = result.data;
+        alert(message);
         setCommentBody('');
         setComments((prevState) => {
+          data.username = username;
+          data.user_id = user_id;
           const newCommentsArray = [data, ...prevState];
           return newCommentsArray;
         });
@@ -125,6 +119,53 @@ export default (props) => {
       .catch((err) => {
         console.dir(err);
       });
+  };
+
+  const deletePostHandler = (event) => {
+    event.preventDefault();
+
+    if (props.chosenPost.id) {
+      const token = localStorage.getItem('token');
+      const { id } = props.chosenPost;
+      axios({
+        method: 'delete',
+        url: `http://localhost/php_test_rest/api/posts/delete.php?token=${token}`,
+        data: {
+          id,
+        },
+      })
+        .then(({ data }) => {
+          alert(data.message);
+          props.postUpdated();
+          props.switchPage('home');
+        })
+        .catch((err) => console.dir(err));
+    }
+  };
+
+  const deleteCommentHandler = (id) => {
+    const token = localStorage.getItem('token');
+    if(!token) {
+      return alert('You need to have a token. Please, login to get one.');
+    }
+    axios({
+      method: 'delete',
+      url: `http://localhost/php_test_rest/api/comments/delete.php?token=${token}`,
+      data: {
+        id
+      }
+    })
+    .then((result) => {
+      if(result.data.message) {
+        alert(result.data.message);
+        setComments(prevState => {
+          const updatedComments = prevState.filter(c => c.id !== id);
+          return updatedComments;
+        });
+      }
+      console.dir(result);
+    })
+    .catch(err => alert(err));
   };
 
   let component = (
@@ -158,9 +199,24 @@ export default (props) => {
           value={description}
         />
       </Form.Group>
-      <Button info type="submit">
-        Submit
-      </Button>
+      <BDiv w="100" display="flex" justifyContent="between">
+        <BDiv>
+          <Button info type="submit">
+            Submit
+          </Button>
+          <Button
+            dark
+            type="input"
+            onClick={() => window.location.reload()}
+            m="1"
+          >
+            Cancel
+          </Button>
+        </BDiv>
+        <Button danger onClick={deletePostHandler}>
+          Delete
+        </Button>
+      </BDiv>
     </Form>
   );
 
@@ -197,24 +253,29 @@ export default (props) => {
               Created by <cite title="Source Title">{author}</cite>
             </Blockquote.Footer>
           </Blockquote>
-          <Form w="100" display="flex" flex="column" alignItems="center">
-            <Form.Textarea
-              mb="2"
-              onChange={(event) => setCommentBody(event.target.value)}
-              value={commentBody}
-            ></Form.Textarea>
-            {localStorage.getItem('token') ? (
+          {localStorage.getItem('token') ? (
+            <Form w="100" display="flex" flex="column" alignItems="center">
+              <Form.Textarea
+                mb="2"
+                onChange={(event) => setCommentBody(event.target.value)}
+                value={commentBody}
+              ></Form.Textarea>
               <Button dark type="submit" onClick={submitCommentHandler}>
                 Comment
               </Button>
-            ) : null}
-          </Form>
+            </Form>
+          ) : null}
         </BDiv>
         <List unstyled w="50">
           {comments.map((comment) => (
             <List.Item key={comment.id}>
               <Blockquote>
-                <p>{comment.body}</p>
+                <BDiv w='100' display='flex' justifyContent='between'>
+                  <p>{comment.body}</p>{' '}
+                  {comment.user_id === localStorage.getItem('userId') ? (
+                    <BA text='center danger' onClick={deleteCommentHandler.bind(null, comment.id)}>x</BA>
+                  ) : null}
+                </BDiv>
                 <Blockquote.Footer>
                   <cite title="Source Title">{comment.username}</cite>
                 </Blockquote.Footer>
