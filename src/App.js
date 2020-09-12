@@ -27,7 +27,11 @@ function login(data) {
       alert(data.message);
       window.location.reload();
     })
-    .catch((err) => alert(err));
+    .catch((err) => {
+      if(err.response.status === 401) {
+        alert('Password or email is wrong!');
+      }
+    })
 }
 
 function App() {
@@ -79,7 +83,6 @@ function App() {
             password,
           };
           login(data);
-          setIsLoggedIn(true);
         })
         .catch((err) => alert(err));
     } else {
@@ -89,7 +92,6 @@ function App() {
         password,
       };
       login(data);
-      setIsLoggedIn(true);
     }
   };
 

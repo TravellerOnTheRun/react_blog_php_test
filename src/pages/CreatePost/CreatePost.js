@@ -56,7 +56,7 @@ export default (props) => {
     const data = {
       title,
       body,
-      description
+      description,
     };
 
     if (isUpdate) {
@@ -98,7 +98,7 @@ export default (props) => {
 
     const data = {
       body: commentBody,
-      post_id: props.chosenPost.id
+      post_id: props.chosenPost.id,
     };
     axios
       .post(
@@ -145,27 +145,27 @@ export default (props) => {
 
   const deleteCommentHandler = (id) => {
     const token = localStorage.getItem('token');
-    if(!token) {
+    if (!token) {
       return alert('You need to have a token. Please, login to get one.');
     }
     axios({
       method: 'delete',
       url: `http://localhost/php_test_rest/api/comments/delete.php?token=${token}`,
       data: {
-        id
-      }
+        id,
+      },
     })
-    .then((result) => {
-      if(result.data.message) {
-        alert(result.data.message);
-        setComments(prevState => {
-          const updatedComments = prevState.filter(c => c.id !== id);
-          return updatedComments;
-        });
-      }
-      console.dir(result);
-    })
-    .catch(err => alert(err));
+      .then((result) => {
+        if (result.data.message) {
+          alert(result.data.message);
+          setComments((prevState) => {
+            const updatedComments = prevState.filter((c) => c.id !== id);
+            return updatedComments;
+          });
+        }
+        console.dir(result);
+      })
+      .catch((err) => alert(err));
   };
 
   let component = (
@@ -207,15 +207,17 @@ export default (props) => {
           <Button
             dark
             type="input"
-            onClick={() => window.location.reload()}
+            onClick={() => props.switchPage('home')}
             m="1"
           >
             Cancel
           </Button>
         </BDiv>
-        <Button danger onClick={deletePostHandler}>
-          Delete
-        </Button>
+        {isUpdate ? (
+          <Button danger onClick={deletePostHandler}>
+            Delete
+          </Button>
+        ) : null}
       </BDiv>
     </Form>
   );
@@ -270,10 +272,15 @@ export default (props) => {
           {comments.map((comment) => (
             <List.Item key={comment.id}>
               <Blockquote>
-                <BDiv w='100' display='flex' justifyContent='between'>
+                <BDiv w="100" display="flex" justifyContent="between">
                   <p>{comment.body}</p>{' '}
                   {comment.user_id === localStorage.getItem('userId') ? (
-                    <BA text='center danger' onClick={deleteCommentHandler.bind(null, comment.id)}>x</BA>
+                    <BA
+                      text="center danger"
+                      onClick={deleteCommentHandler.bind(null, comment.id)}
+                    >
+                      x
+                    </BA>
                   ) : null}
                 </BDiv>
                 <Blockquote.Footer>
